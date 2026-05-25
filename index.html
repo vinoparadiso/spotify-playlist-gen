@@ -17,7 +17,6 @@
             --muted: #606060;
             --accent: #d4a017;
             --accent-dim: rgba(212,160,23,0.12);
-            --accent-glow: rgba(212,160,23,0.25);
             --danger: #e04040;
             --success: #22c55e;
         }
@@ -97,6 +96,18 @@
         .track-source{font-size:11px;color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:160px}
         .track-artists{color:var(--muted);font-size:12px}
         .track-name{font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:280px}
+        
+        /* Playlist Selector Styles */
+        .pl-list{max-height:400px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;background:var(--surface)}
+        .pl-item{display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .15s}
+        .pl-item:last-child{border-bottom:none}
+        .pl-item:hover{background:rgba(255,255,255,0.02)}
+        .pl-item.selected{background:var(--accent-dim)}
+        .pl-item input[type="checkbox"]{accent-color:var(--accent);width:16px;height:16px;cursor:pointer;flex-shrink:0}
+        .pl-img{width:40px;height:40px;border-radius:4px;object-fit:cover;background:var(--border);flex-shrink:0}
+        .pl-info{flex:1;min-width:0}
+        .pl-name{font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+        .pl-meta{font-size:12px;color:var(--muted);margin-top:2px}
 
         @media(max-width:640px){
             .stat-card{min-width:100px;padding:12px 14px}
@@ -142,71 +153,74 @@
                 <div style="background:var(--card);border:1px solid var(--border);border-radius:12px;padding:28px 28px 24px">
                     <h2 style="font-size:18px;font-weight:600;margin-bottom:4px">Connect Your Spotify</h2>
                     <p style="font-size:13px;color:var(--muted);margin-bottom:22px;line-height:1.5">
-                        Scan all your playlists and liked songs for tracks in a specific BPM range. Results can be exported for Rekordbox prep.
+                        Select specific playlists to scan for tracks in your target BPM range. Avoids API limits and speeds up prep.
                     </p>
 
-                    <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
-                        Spotify Client ID
-                    </label>
+                    <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Spotify Client ID</label>
                     <input type="text" id="inp-client-id" placeholder="e.g. a1b2c3d4e5f6..." style="width:100%;margin-bottom:16px" spellcheck="false" autocomplete="off">
 
-                    <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">
-                        Redirect URI
-                    </label>
+                    <label style="display:block;font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px">Redirect URI</label>
                     <input type="text" id="inp-redirect" style="width:100%;margin-bottom:6px;font-size:13px;color:var(--muted)" readonly>
                     <p style="font-size:11px;color:var(--muted);margin-bottom:20px">
                         <i class="fa-solid fa-circle-info" style="color:var(--accent);margin-right:4px"></i>
                         This must match exactly in your Spotify Developer App settings.
                     </p>
 
-                    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
-                        <div style="display:flex;align-items:center;gap:8px">
-                            <input type="checkbox" id="chk-create-playlist" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
-                            <label for="chk-create-playlist" style="font-size:13px;cursor:pointer">Allow creating a new Spotify playlist from results</label>
-                        </div>
-                        <div style="display:flex;align-items:center;gap:8px">
-                            <input type="checkbox" id="chk-skip-liked" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
-                            <label for="chk-skip-liked" style="font-size:13px;cursor:pointer">Exclude Liked Songs (speeds up scanning significantly)</label>
-                        </div>
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:22px">
+                        <input type="checkbox" id="chk-create-playlist" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
+                        <label for="chk-create-playlist" style="font-size:13px;cursor:pointer">Allow creating a new Spotify playlist from results</label>
                     </div>
 
                     <button class="btn-primary" id="btn-connect" style="width:100%;justify-content:center">
-                        <i class="fa-brands fa-spotify"></i>
-                        Connect to Spotify
+                        <i class="fa-brands fa-spotify"></i> Connect & Load Playlists
                     </button>
 
                     <div id="crypto-warning" style="display:none;margin-top:14px;padding:10px 14px;background:rgba(224,64,64,0.08);border:1px solid rgba(224,64,64,0.2);border-radius:8px;font-size:12px;color:var(--danger);line-height:1.5">
                         <i class="fa-solid fa-triangle-exclamation" style="margin-right:4px"></i>
-                        <strong>Secure context required.</strong> This page needs to be served over HTTPS or localhost. Run a local server:<br>
-                        <code style="display:block;margin-top:6px;padding:6px 10px;background:var(--bg);border-radius:4px;color:var(--text)">python3 -m http.server 8080</code>
+                        <strong>Secure context required.</strong> This page needs HTTPS or localhost.
                     </div>
                 </div>
-
-                <!-- Setup Guide -->
                 <details style="margin-top:16px;cursor:pointer">
                     <summary style="font-size:13px;font-weight:500;color:var(--accent);padding:8px 0;user-select:none">
-                        <i class="fa-solid fa-book-open" style="margin-right:6px"></i>
-                        How to set up a Spotify Developer App
+                        <i class="fa-solid fa-book-open" style="margin-right:6px"></i>Setup Guide
                     </summary>
                     <div style="padding:4px 0 8px">
-                        <div class="guide-step">
-                            <span class="guide-num">1</span>
-                            <span class="guide-text">Go to <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:var(--accent);text-decoration:underline">developer.spotify.com/dashboard</a> and log in with your Spotify account.</span>
-                        </div>
-                        <div class="guide-step">
-                            <span class="guide-num">2</span>
-                            <span class="guide-text">Click <strong>"Create app"</strong>. Fill in a name and description. Set <strong>Redirect URI</strong> to the URL shown above. Web API is the only type needed.</span>
-                        </div>
-                        <div class="guide-step">
-                            <span class="guide-num">3</span>
-                            <span class="guide-text">After creating, copy the <strong>Client ID</strong> from the app settings and paste it above.</span>
-                        </div>
-                        <div class="guide-step">
-                            <span class="guide-num">4</span>
-                            <span class="guide-text">If using this as a local file, serve it with <code>python3 -m http.server 8080</code> and open <code>http://localhost:8080/THIS_FILE.html</code></span>
-                        </div>
+                        <div class="guide-step"><span class="guide-num">1</span><span class="guide-text">Go to <a href="https://developer.spotify.com/dashboard" target="_blank" style="color:var(--accent);text-decoration:underline">developer.spotify.com/dashboard</a> and log in.</span></div>
+                        <div class="guide-step"><span class="guide-num">2</span><span class="guide-text">Click <strong>"Create app"</strong>. Set <strong>Redirect URI</strong> to the URL above.</span></div>
+                        <div class="guide-step"><span class="guide-num">3</span><span class="guide-text">Copy the <strong>Client ID</strong> and paste it above.</span></div>
                     </div>
                 </details>
+            </div>
+        </div>
+
+        <!-- ==================== PLAYLIST SELECTOR ==================== -->
+        <div id="panel-select" class="panel">
+            <div style="max-width:640px;margin:0 auto">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px">
+                    <div>
+                        <h2 style="font-size:20px;font-weight:600">Select Playlists to Scan</h2>
+                        <p style="font-size:13px;color:var(--muted);margin-top:4px">Choose 1 or more. Scanning smaller batches prevents Spotify rate limits.</p>
+                    </div>
+                    <div style="display:flex;gap:10px">
+                        <button class="btn-ghost" id="btn-select-all"><i class="fa-solid fa-check-double"></i> Select All</button>
+                        <button class="btn-ghost" id="btn-deselect-all"><i class="fa-regular fa-square"></i> Clear</button>
+                    </div>
+                </div>
+                
+                <div id="playlist-container" class="pl-list" style="margin-bottom:20px">
+                    <!-- Playlists injected here -->
+                </div>
+
+                <div style="display:flex;align-items:center;justify-content:space-between;background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px">
+                    <div>
+                        <span style="font-size:13px;color:var(--muted)">Selected: </span>
+                        <span id="selected-count" style="font-size:15px;font-weight:600;color:var(--accent)">0 playlists</span>
+                        <span id="selected-tracks" style="font-size:13px;color:var(--muted);margin-left:8px">(0 tracks)</span>
+                    </div>
+                    <button class="btn-primary" id="btn-scan-selected" disabled>
+                        <i class="fa-solid fa-bolt"></i> Scan Selected
+                    </button>
+                </div>
             </div>
         </div>
 
@@ -215,7 +229,7 @@
             <div style="max-width:520px;margin:80px auto;text-align:center">
                 <div style="margin-bottom:24px">
                     <div class="spinner" style="width:36px;height:36px;border-width:3px;margin:0 auto 16px"></div>
-                    <h2 style="font-size:20px;font-weight:600;margin-bottom:6px">Scanning Your Library</h2>
+                    <h2 style="font-size:20px;font-weight:600;margin-bottom:6px">Scanning Selected Playlists</h2>
                     <p id="scan-status" style="font-size:13px;color:var(--muted)">Starting...</p>
                 </div>
                 <div class="progress-track" style="margin-bottom:12px">
@@ -230,20 +244,10 @@
 
         <!-- ==================== RESULTS ==================== -->
         <div id="panel-results" class="panel">
-            <!-- Stats -->
             <div style="display:flex;gap:14px;flex-wrap:wrap;margin-bottom:20px">
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-total">0</div>
-                    <div class="stat-label">Scanned</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-matches">0</div>
-                    <div class="stat-label">In Range</div>
-                </div>
-                <div class="stat-card">
-                    <div class="stat-value" id="stat-avg-bpm">—</div>
-                    <div class="stat-label">Avg BPM</div>
-                </div>
+                <div class="stat-card"><div class="stat-value" id="stat-total">0</div><div class="stat-label">Scanned</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-matches">0</div><div class="stat-label">In Range</div></div>
+                <div class="stat-card"><div class="stat-value" id="stat-avg-bpm">—</div><div class="stat-label">Avg BPM</div></div>
                 <div class="stat-card" style="flex:1;min-width:200px">
                     <div style="font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin-bottom:8px">BPM Distribution</div>
                     <div id="bpm-dist" style="display:flex;align-items:flex-end;gap:1px;height:40px"></div>
@@ -254,7 +258,6 @@
                 </div>
             </div>
 
-            <!-- Filters -->
             <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px 20px;margin-bottom:16px;display:flex;flex-wrap:wrap;align-items:center;gap:14px">
                 <div style="display:flex;align-items:center;gap:6px">
                     <label style="font-size:12px;color:var(--muted);font-weight:600">BPM</label>
@@ -264,9 +267,7 @@
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
                     <label style="font-size:12px;color:var(--muted);font-weight:600">Key</label>
-                    <select id="filter-key" style="width:80px;font-size:13px">
-                        <option value="">All</option>
-                    </select>
+                    <select id="filter-key" style="width:80px;font-size:13px"><option value="">All</option></select>
                 </div>
                 <div style="display:flex;align-items:center;gap:6px;flex:1;min-width:180px">
                     <i class="fa-solid fa-magnifying-glass" style="color:var(--muted);font-size:12px"></i>
@@ -274,13 +275,10 @@
                 </div>
                 <div style="display:flex;align-items:center;gap:6px">
                     <label style="font-size:12px;color:var(--muted);font-weight:600">Source</label>
-                    <select id="filter-source" style="width:160px;font-size:13px">
-                        <option value="">All Playlists</option>
-                    </select>
+                    <select id="filter-source" style="width:160px;font-size:13px"><option value="">All Playlists</option></select>
                 </div>
             </div>
 
-            <!-- Table -->
             <div style="background:var(--card);border:1px solid var(--border);border-radius:10px;overflow:hidden;margin-bottom:16px">
                 <div style="max-height:520px;overflow-y:auto">
                     <table class="results-table">
@@ -304,41 +302,27 @@
                 </div>
             </div>
 
-            <!-- Export Bar -->
             <div style="display:flex;flex-wrap:wrap;align-items:center;gap:10px;justify-content:space-between">
                 <p id="showing-count" style="font-size:13px;color:var(--muted)"></p>
                 <div style="display:flex;gap:8px;flex-wrap:wrap">
-                    <button class="btn-ghost" id="btn-export-csv" disabled>
-                        <i class="fa-solid fa-file-csv"></i> Export CSV
-                    </button>
-                    <button class="btn-ghost" id="btn-export-json" disabled>
-                        <i class="fa-solid fa-code"></i> Export JSON
-                    </button>
-                    <button class="btn-ghost" id="btn-create-playlist" disabled>
-                        <i class="fa-brands fa-spotify" style="color:#1DB954"></i> Create Playlist
-                    </button>
-                    <button class="btn-ghost" id="btn-rescan">
-                        <i class="fa-solid fa-rotate"></i> Rescan
-                    </button>
+                    <button class="btn-ghost" id="btn-export-csv" disabled><i class="fa-solid fa-file-csv"></i> Export CSV</button>
+                    <button class="btn-ghost" id="btn-export-json" disabled><i class="fa-solid fa-code"></i> Export JSON</button>
+                    <button class="btn-ghost" id="btn-create-playlist" disabled><i class="fa-brands fa-spotify" style="color:#1DB954"></i> Create Playlist</button>
+                    <button class="btn-ghost" id="btn-back-to-select"><i class="fa-solid fa-arrow-left"></i> New Selection</button>
                 </div>
             </div>
         </div>
 
     </main>
 </div>
-
-<!-- Toast -->
 <div id="toast" class="toast"></div>
 
 <script>
-/* ============================================================
-   CONSTANTS & STATE
-   ============================================================ */
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const API_BASE = 'https://api.spotify.com/v1';
-const BATCH_SIZE = 100; // Spotify allows up to 100 IDs per request
-const DELAY_MS = 800;  // Increased delay to guarantee it finishes and avoid 403s
+const BATCH_SIZE = 50; // Kept at 50. 100 triggers 403s faster on audio features.
+const DELAY_MS = 1000; // 1 second between heavy audio feature requests
 
 let accessToken = null;
 let userId = null;
@@ -348,59 +332,36 @@ let sortCol = 'bpm';
 let sortDir = 'asc';
 let cancelScan = false;
 let canCreatePlaylist = false;
+let userPlaylists = []; // Cached list of user's playlists
 
 const CAMELOT_MAP = {
-    0:  { major:'8B',  minor:'5A'  }, 
-    1:  { major:'3B',  minor:'12A' }, 
-    2:  { major:'10B', minor:'7A'  }, 
-    3:  { major:'5B',  minor:'2A'  }, 
-    4:  { major:'12B', minor:'9A'  }, 
-    5:  { major:'7B',  minor:'4A'  }, 
-    6:  { major:'2B',  minor:'11A' }, 
-    7:  { major:'9B',  minor:'6A'  }, 
-    8:  { major:'4B',  minor:'1A'  }, 
-    9:  { major:'11B', minor:'8A'  }, 
-    10: { major:'6B',  minor:'3A'  }, 
-    11: { major:'1B',  minor:'10A' }  
+    0:{major:'8B',minor:'5A'},1:{major:'3B',minor:'12A'},2:{major:'10B',minor:'7A'},
+    3:{major:'5B',minor:'2A'},4:{major:'12B',minor:'9A'},5:{major:'7B',minor:'4A'},
+    6:{major:'2B',minor:'11A'},7:{major:'9B',minor:'6A'},8:{major:'4B',minor:'1A'},
+    9:{major:'11B',minor:'8A'},10:{major:'6B',minor:'3A'},11:{major:'1B',minor:'10A'}
 };
 
-/* ============================================================
-   PKCE HELPERS
-   ============================================================ */
-function randomString(len) {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    const arr = crypto.getRandomValues(new Uint8Array(len));
-    return Array.from(arr, b => chars[b % chars.length]).join('');
-}
+/* --- PKCE --- */
+function randomString(len) { const c='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'; const a=crypto.getRandomValues(new Uint8Array(len)); return Array.from(a,b=>c[b%c.length]).join(''); }
+async function sha256(plain) { return await crypto.subtle.digest('SHA-256', new TextEncoder().encode(plain)); }
+function base64url(buf) { return btoa(String.fromCharCode(...new Uint8Array(buf))).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_'); }
 
-async function sha256(plain) {
-    const encoded = new TextEncoder().encode(plain);
-    return await crypto.subtle.digest('SHA-256', encoded);
-}
-
-function base64url(buf) {
-    const bytes = new Uint8Array(buf);
-    let str = '';
-    bytes.forEach(b => str += String.fromCharCode(b));
-    return btoa(str).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-}
-
-/* ============================================================
-   SPOTIFY API WRAPPERS
-   ============================================================ */
-async function apiFetch(url, retries = 3) {
-    const res = await fetch(url, {
-        headers: { 'Authorization': 'Bearer ' + accessToken }
-    });
+/* --- API Fetch with extreme 403/429 handling --- */
+async function apiFetch(url, retries = 5) {
+    const res = await fetch(url, { headers: { 'Authorization': 'Bearer ' + accessToken } });
     
     if (res.status === 401) throw new Error('Token expired. Please reconnect.');
     
-    // Handle both 429 (Standard Rate Limit) and 403 (Spotify's aggressive hidden rate limit)
+    // 403 on audio features = hard rate limit block. Needs long backoff.
     if (res.status === 429 || res.status === 403) {
-        if (retries <= 0) throw new Error(`Spotify rate limit hit (Status ${res.status}). Try again in a few minutes.`);
-        const retryAfter = res.headers.get('Retry-After') || '5';
-        const waitTime = parseInt(retryAfter) * 1000;
-        console.warn(`Rate limited (${res.status}). Retrying in ${waitTime}ms... (${retries} retries left)`);
+        if (retries <= 0) throw new Error(`Spotify blocked the request (Status ${res.status}). The selected playlists might be too large to scan all at once. Try scanning fewer playlists.`);
+        
+        // If 403, wait 10 seconds. If 429, use their header or default to 3s.
+        const waitTime = res.status === 403 ? 10000 : (parseInt(res.headers.get('Retry-After') || '3') * 1000);
+        
+        console.warn(`Rate limited (${res.status}). Pausing for ${waitTime/1000}s... (${retries} tries left)`);
+        document.getElementById('scan-status').textContent = `Rate limited by Spotify. Waiting ${waitTime/1000}s...`;
+        
         await new Promise(r => setTimeout(r, waitTime));
         return apiFetch(url, retries - 1);
     }
@@ -410,52 +371,179 @@ async function apiFetch(url, retries = 3) {
 }
 
 async function fetchAllPages(url) {
-    let results = [];
-    let next = url;
+    let results = [], next = url;
     while (next && !cancelScan) {
         const data = await apiFetch(next);
         if (data.items) results = results.concat(data.items);
         else if (data.audio_features) results = results.concat(data.audio_features);
         next = data.next;
-        if (next) await sleep(DELAY_MS);
+        if (next) await sleep(DELAY_MS / 2); // Slightly faster for standard track fetching
     }
     return results;
 }
 
 function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
 
-/* ============================================================
-   SCANNING LOGIC
-   ============================================================ */
+/* --- Auth & Loading Playlists --- */
+function initiateAuth() {
+    const clientId = document.getElementById('inp-client-id').value.trim();
+    const redirectUri = document.getElementById('inp-redirect').value.trim();
+    if (!clientId) return showToast('Please enter your Spotify Client ID', 'error');
+    if (!window.crypto?.subtle) return document.getElementById('crypto-warning').style.display = 'block';
+
+    localStorage.setItem('bpm_radar_client_id', clientId);
+    const verifier = randomString(64);
+    sessionStorage.setItem('bpm_radar_verifier', verifier);
+
+    sha256(verifier).then(hash => {
+        const scopes = 'playlist-read-private user-library-read' + (document.getElementById('chk-create-playlist').checked ? ' playlist-modify-public playlist-modify-private' : '');
+        canCreatePlaylist = document.getElementById('chk-create-playlist').checked;
+        sessionStorage.setItem('bpm_radar_can_create', canCreatePlaylist ? '1' : '0');
+
+        window.location.href = AUTH_URL + '?' + new URLSearchParams({
+            response_type: 'code', client_id: clientId, scope: scopes,
+            code_challenge_method: 'S256', code_challenge: base64url(hash), redirect_uri: redirectUri
+        }).toString();
+    });
+}
+
+async function handleAuthCallback() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('error')) { showToast(`Auth error: ${params.get('error')}`, 'error'); showPanel('setup'); return true; }
+    const code = params.get('code');
+    if (!code) return false;
+
+    showPanel('scanning'); updateScanStatus('Exchanging authorization code...'); setScanProgress(0);
+
+    try {
+        const res = await fetch(TOKEN_URL, {
+            method: 'POST', headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+            body: new URLSearchParams({
+                client_id: localStorage.getItem('bpm_radar_client_id'), grant_type: 'authorization_code',
+                code, redirect_uri: document.getElementById('inp-redirect').value.trim(),
+                code_verifier: sessionStorage.getItem('bpm_radar_verifier')
+            })
+        });
+        if (!res.ok) throw new Error((await res.json().catch(()=>{})).error_description || `Token failed (${res.status})`);
+        
+        accessToken = (await res.json()).access_token;
+        canCreatePlaylist = sessionStorage.getItem('bpm_radar_can_create') === '1';
+        window.history.replaceState({}, document.title, window.location.pathname);
+        
+        await loadPlaylistSelector();
+    } catch (err) {
+        showToast(err.message, 'error'); showPanel('setup');
+    }
+    return true;
+}
+
+async function loadPlaylistSelector() {
+    showPanel('scanning');
+    updateScanStatus('Fetching your playlist library...');
+    setScanProgress(50);
+    
+    try {
+        const me = await apiFetch(API_BASE + '/me');
+        userId = me.id;
+        document.getElementById('user-name').textContent = me.display_name || me.id;
+        document.getElementById('user-badge').style.display = 'flex';
+
+        // Fetch just the playlist metadata (super fast, no tracks yet)
+        const data = await fetchAllPages(API_BASE + '/me/playlists?limit=50');
+        
+        // Add Liked Songs virtually
+        userPlaylists = [
+            { id: 'liked', name: 'Liked Songs', tracks: { total: 0 }, images: [], isLiked: true }
+        ];
+
+        data.forEach(p => {
+            if (p.owner.id === me.id || p.collaborative) {
+                userPlaylists.push({ id: p.id, name: p.name, tracks: p.tracks, images: p.images, isLiked: false });
+            }
+        });
+
+        // Fetch actual Liked Songs count
+        const likedData = await apiFetch(API_BASE + '/me/tracks?limit=1');
+        userPlaylists[0].tracks.total = likedData.total;
+
+        setScanProgress(100);
+        renderPlaylistSelector();
+        showPanel('select');
+    } catch(err) {
+        showToast(err.message, 'error'); showPanel('setup');
+    }
+}
+
+function renderPlaylistSelector() {
+    const container = document.getElementById('playlist-container');
+    let html = '';
+    
+    userPlaylists.forEach((p, i) => {
+        const imgSrc = p.isLiked ? 'https://misc.scdn.co/liked-songs/liked-songs-640.png' : (p.images[0]?.url || '');
+        const count = p.tracks?.total || 0;
+        html += `
+        <label class="pl-item" data-id="${p.id}">
+            <input type="checkbox" class="pl-check" value="${p.id}" style="display:none">
+            <img src="${imgSrc}" class="pl-img" alt="" onerror="this.style.display='none'">
+            <div class="pl-info">
+                <div class="pl-name">${escHtml(p.name)}</div>
+                <div class="pl-meta">${p.isLiked ? 'Playlist' : 'Playlist'} • ${count} tracks</div>
+            </div>
+            <i class="fa-regular fa-square pl-icon" style="font-size:18px;color:var(--muted);flex-shrink:0"></i>
+        </label>`;
+    });
+    
+    container.innerHTML = html;
+    updateSelectionCount();
+
+    // Bind click events to labels for custom checkbox styling
+    container.querySelectorAll('.pl-item').forEach(item => {
+        item.addEventListener('click', (e) => {
+            e.preventDefault();
+            const cb = item.querySelector('.pl-check');
+            const icon = item.querySelector('.pl-icon');
+            cb.checked = !cb.checked;
+            item.classList.toggle('selected', cb.checked);
+            icon.className = cb.checked ? 'fa-solid fa-square-check pl-icon' : 'fa-regular fa-square pl-icon';
+            icon.style.color = cb.checked ? 'var(--accent)' : 'var(--muted)';
+            updateSelectionCount();
+        });
+    });
+}
+
+function updateSelectionCount() {
+    const checked = document.querySelectorAll('.pl-check:checked');
+    const count = checked.length;
+    let tracks = 0;
+    checked.forEach(cb => {
+        const pl = userPlaylists.find(p => p.id === cb.value);
+        if (pl) tracks += pl.tracks?.total || 0;
+    });
+    
+    document.getElementById('selected-count').textContent = `${count} playlist${count !== 1 ? 's' : ''}`;
+    document.getElementById('selected-tracks').textContent = `(${tracks} tracks)`;
+    document.getElementById('btn-scan-selected').disabled = count === 0;
+}
+
+/* --- Scanning Logic --- */
 async function startScan() {
     cancelScan = false;
     allTracks = [];
     showPanel('scanning');
     setEqPlaying(true);
 
+    // Get selected IDs
+    const selectedIds = Array.from(document.querySelectorAll('.pl-check:checked')).map(cb => cb.value);
+    const targets = userPlaylists.filter(p => selectedIds.includes(p.id));
+
     try {
-        updateScanStatus('Fetching your profile...');
-        const me = await apiFetch(API_BASE + '/me');
-        userId = me.id;
-        document.getElementById('user-name').textContent = me.display_name || me.id;
-        document.getElementById('user-badge').style.display = 'flex';
-
-        updateScanStatus('Fetching playlists...');
-        const playlistsData = await fetchAllPages(API_BASE + '/me/playlists?limit=50');
-        const playlists = playlistsData.filter(p => p.owner.id === me.id || p.collaborative);
-
-        // Check if user wants to skip liked songs
-        const skipLiked = sessionStorage.getItem('bpm_radar_skip_liked') === 'true';
-        const likedSource = skipLiked ? [] : [{ id: 'liked', name: 'Liked Songs' }];
-        const allSources = [...likedSource, ...playlists.map(p => ({ id: p.id, name: p.name }))];
-
         const trackMap = new Map();
 
-        for (let i = 0; i < allSources.length; i++) {
+        for (let i = 0; i < targets.length; i++) {
             if (cancelScan) break;
-            const src = allSources[i];
-            updateScanStatus(`Scanning: ${src.name}`);
-            const pct = Math.round((i / allSources.length) * 60);
+            const src = targets[i];
+            updateScanStatus(`Fetching tracks: ${src.name}`);
+            const pct = Math.round((i / targets.length) * 50);
             setScanProgress(pct);
 
             let items;
@@ -467,117 +555,80 @@ async function startScan() {
 
             for (const item of items) {
                 const track = src.id === 'liked' ? item.track : item.track;
-                if (!track || !track.id || track.id === 'null') continue;
-                if (!track.external_urls || !track.external_urls.spotify) continue;
+                if (!track?.id || track.id === 'null' || !track.external_urls?.spotify) continue;
                 if (!trackMap.has(track.id)) {
                     trackMap.set(track.id, {
-                        id: track.id,
-                        name: track.name,
-                        artists: (track.artists || []).map(a => a.name),
-                        album: track.album ? track.album.name : '',
-                        duration_ms: track.duration_ms || 0,
-                        source: src.name,
-                        url: track.external_urls.spotify,
-                        bpm: null,
-                        key: null,
-                        mode: null,
-                        camelot: null,
-                        energy: null,
-                        danceability: null
+                        id: track.id, name: track.name, artists: (track.artists||[]).map(a=>a.name),
+                        album: track.album?.name || '', duration_ms: track.duration_ms || 0,
+                        source: src.name, url: track.external_urls.spotify,
+                        bpm: null, key: null, mode: null, camelot: null, energy: null, danceability: null
                     });
                 }
             }
-            document.getElementById('scan-detail').textContent = `${trackMap.size} tracks found`;
+            document.getElementById('scan-detail').textContent = `${trackMap.size} tracks collected`;
         }
 
-        if (cancelScan) { showPanel('setup'); return; }
+        if (cancelScan) { showPanel('select'); return; }
 
+        // Fetch Audio Features
         const ids = Array.from(trackMap.keys());
         const totalBatches = Math.ceil(ids.length / BATCH_SIZE);
-        updateScanStatus('Analyzing audio features (BPM, key, energy)...');
+        updateScanStatus('Analyzing BPM & Key (Avoiding rate limits)...');
 
         for (let i = 0; i < totalBatches; i++) {
             if (cancelScan) break;
             const batch = ids.slice(i * BATCH_SIZE, (i + 1) * BATCH_SIZE);
-            const pct = 60 + Math.round((i / totalBatches) * 38);
+            const pct = 50 + Math.round((i / totalBatches) * 48);
             setScanProgress(pct);
 
             const data = await apiFetch(API_BASE + `/audio-features?ids=${batch.join(',')}`);
-            const features = data.audio_features || [];
-
-            for (let j = 0; j < features.length; j++) {
-                const f = features[j];
-                if (!f || !f.id) continue;
-                const t = trackMap.get(f.id);
-                if (!t) continue;
+            (data.audio_features || []).forEach(f => {
+                if (!f?.id) return;
+                const t = trackMap.get(f.id); if (!t) return;
                 t.bpm = f.tempo != null ? Math.round(f.tempo * 10) / 10 : null;
-                t.key = f.key;
-                t.mode = f.mode;
+                t.key = f.key; t.mode = f.mode;
                 t.energy = f.energy != null ? Math.round(f.energy * 100) : null;
                 t.danceability = f.danceability != null ? Math.round(f.danceability * 100) : null;
                 if (f.key != null && f.mode != null && CAMELOT_MAP[f.key]) {
                     t.camelot = f.mode === 1 ? CAMELOT_MAP[f.key].major : CAMELOT_MAP[f.key].minor;
                 }
-            }
+            });
 
-            document.getElementById('scan-detail').textContent = `${i + 1}/${totalBatches} batches analyzed (${ids.length} tracks)`;
-            if (i < totalBatches - 1) await sleep(DELAY_MS);
+            document.getElementById('scan-status').textContent = `Analyzing BPM & Key... (Batch ${i+1}/${totalBatches})`;
+            document.getElementById('scan-detail').textContent = `${trackMap.size} tracks processed`;
+            if (i < totalBatches - 1) await sleep(DELAY_MS); // 1s delay between batches
         }
 
         setScanProgress(100);
         allTracks = Array.from(trackMap.values()).filter(t => t.bpm !== null);
 
-        if (allTracks.length === 0) {
-            showToast('No tracks with BPM data found.', 'error');
-            showPanel('setup');
-            return;
-        }
-
+        if (!allTracks.length) { showToast('No tracks with BPM data found in selection.', 'error'); showPanel('select'); return; }
+        
         showToast(`Scan complete — ${allTracks.length} tracks analyzed`, 'success');
         initResults();
-
     } catch (err) {
-        console.error(err);
-        showToast(err.message, 'error');
-        showPanel('setup');
-    } finally {
-        setEqPlaying(false);
-    }
+        console.error(err); showToast(err.message, 'error'); showPanel('select'); // Go back to select on error
+    } finally { setEqPlaying(false); }
 }
 
-/* ============================================================
-   RESULTS — INIT, FILTER, SORT, RENDER
-   ============================================================ */
-function initResults() {
-    showPanel('results');
-    populateSourceFilter();
-    populateKeyFilter();
-    buildBpmDistribution();
-    applyFilters();
-}
+/* --- Results UI --- */
+function initResults() { showPanel('results'); populateSourceFilter(); populateKeyFilter(); buildBpmDistribution(); applyFilters(); }
 
 function applyFilters() {
     const bpmMin = parseFloat(document.getElementById('filter-bpm-min').value) || 0;
     const bpmMax = parseFloat(document.getElementById('filter-bpm-max').value) || 999;
-    const keyFilter = document.getElementById('filter-key').value;
-    const searchVal = document.getElementById('filter-search').value.toLowerCase().trim();
-    const sourceVal = document.getElementById('filter-source').value;
+    const keyF = document.getElementById('filter-key').value;
+    const search = document.getElementById('filter-search').value.toLowerCase().trim();
+    const srcF = document.getElementById('filter-source').value;
 
     filteredTracks = allTracks.filter(t => {
         if (t.bpm < bpmMin || t.bpm > bpmMax) return false;
-        if (keyFilter && t.camelot !== keyFilter) return false;
-        if (sourceVal && t.source !== sourceVal) return false;
-        if (searchVal) {
-            const haystack = (t.name + ' ' + t.artists.join(' ')).toLowerCase();
-            if (!haystack.includes(searchVal)) return false;
-        }
+        if (keyF && t.camelot !== keyF) return false;
+        if (srcF && t.source !== srcF) return false;
+        if (search && !(t.name + ' ' + t.artists.join(' ')).toLowerCase().includes(search)) return false;
         return true;
     });
-
-    doSort();
-    renderTable();
-    updateStats(bpmMin, bpmMax);
-    updateBpmDistHighlight(bpmMin, bpmMax);
+    doSort(); renderTable(); updateStats(); updateBpmDistHighlight(bpmMin, bpmMax);
 }
 
 function doSort() {
@@ -589,7 +640,6 @@ function doSort() {
             case 'camelot': va = a.camelot || ''; vb = b.camelot || ''; break;
             case 'energy': va = a.energy || 0; vb = b.energy || 0; break;
             case 'source': va = a.source.toLowerCase(); vb = b.source.toLowerCase(); break;
-            case 'index':
             default: return 0;
         }
         if (va < vb) return sortDir === 'asc' ? -1 : 1;
@@ -601,452 +651,153 @@ function doSort() {
 function renderTable() {
     const tbody = document.getElementById('results-body');
     const noRes = document.getElementById('no-results');
-    const exportBtns = [document.getElementById('btn-export-csv'), document.getElementById('btn-export-json'), document.getElementById('btn-create-playlist')];
+    const btns = [document.getElementById('btn-export-csv'), document.getElementById('btn-export-json'), document.getElementById('btn-create-playlist')];
 
-    if (filteredTracks.length === 0) {
-        tbody.innerHTML = '';
-        noRes.style.display = 'block';
-        exportBtns.forEach(b => b.disabled = true);
-        document.getElementById('showing-count').textContent = '0 tracks shown';
-        return;
+    if (!filteredTracks.length) {
+        tbody.innerHTML = ''; noRes.style.display = 'block'; btns.forEach(b=>b.disabled=true);
+        document.getElementById('showing-count').textContent = '0 tracks shown'; return;
     }
-
-    noRes.style.display = 'none';
-    exportBtns.forEach(b => b.disabled = false);
-    document.getElementById('showing-count').textContent = `${filteredTracks.length} track${filteredTracks.length !== 1 ? 's' : ''} shown`;
+    noRes.style.display = 'none'; btns.forEach(b=>b.disabled=false);
+    document.getElementById('showing-count').textContent = `${filteredTracks.length} tracks shown`;
 
     document.querySelectorAll('.results-table th[data-sort]').forEach(th => {
         th.classList.remove('sort-asc', 'sort-desc');
         if (th.dataset.sort === sortCol) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
     });
 
-    let html = '';
-    filteredTracks.forEach((t, i) => {
-        const camelotClass = t.mode === 1 ? 'major' : 'minor';
-        const artistsStr = t.artists.join(', ');
-        html += `<tr>
-            <td style="color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums">${i + 1}</td>
-            <td>
-                <div class="track-name">${escHtml(t.name)}</div>
-                <div class="track-artists">${escHtml(artistsStr)}</div>
-            </td>
+    tbody.innerHTML = filteredTracks.map((t, i) => `
+        <tr>
+            <td style="color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums">${i+1}</td>
+            <td><div class="track-name">${escHtml(t.name)}</div><div class="track-artists">${escHtml(t.artists.join(', '))}</div></td>
             <td style="font-weight:600;font-variant-numeric:tabular-nums;color:var(--accent)">${t.bpm}</td>
-            <td>${t.camelot ? `<span class="key-badge ${camelotClass}">${t.camelot}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
-            <td style="font-variant-numeric:tabular-nums;color:${energyColor(t.energy)}">${t.energy != null ? t.energy + '%' : '—'}</td>
+            <td>${t.camelot ? `<span class="key-badge ${t.mode===1?'major':'minor'}">${t.camelot}</span>` : '<span style="color:var(--muted)">—</span>'}</td>
+            <td style="font-variant-numeric:tabular-nums;color:${energyColor(t.energy)}">${t.energy!=null?t.energy+'%':'—'}</td>
             <td><div class="track-source" title="${escHtml(t.source)}">${escHtml(t.source)}</div></td>
-            <td><a href="${t.url}" target="_blank" rel="noopener" style="color:#1DB954;font-size:14px" title="Open in Spotify" aria-label="Open in Spotify"><i class="fa-brands fa-spotify"></i></a></td>
-        </tr>`;
-    });
-    tbody.innerHTML = html;
+            <td><a href="${t.url}" target="_blank" rel="noopener" style="color:#1DB954;font-size:14px"><i class="fa-brands fa-spotify"></i></a></td>
+        </tr>`).join('');
 }
 
-function updateStats(bpmMin, bpmMax) {
+function updateStats() {
     document.getElementById('stat-total').textContent = allTracks.length;
     document.getElementById('stat-matches').textContent = filteredTracks.length;
-    if (filteredTracks.length > 0) {
-        const avg = filteredTracks.reduce((s, t) => s + t.bpm, 0) / filteredTracks.length;
-        document.getElementById('stat-avg-bpm').textContent = avg.toFixed(1);
-    } else {
-        document.getElementById('stat-avg-bpm').textContent = '—';
-    }
+    document.getElementById('stat-avg-bpm').textContent = filteredTracks.length ? (filteredTracks.reduce((s,t)=>s+t.bpm,0)/filteredTracks.length).toFixed(1) : '—';
 }
 
-function energyColor(e) {
-    if (e == null) return 'var(--muted)';
-    if (e >= 75) return '#ef4444';
-    if (e >= 50) return '#d4a017';
-    if (e >= 25) return '#a3e635';
-    return '#4ade80';
-}
+function energyColor(e) { return e==null?'var(--muted)':e>=75?'#ef4444':e>=50?'#d4a017':e>=25?'#a3e635':'#4ade80'; }
 
-/* ============================================================
-   BPM DISTRIBUTION CHART
-   ============================================================ */
 function buildBpmDistribution() {
-    const container = document.getElementById('bpm-dist');
-    if (allTracks.length === 0) { container.innerHTML = ''; return; }
-
-    const bpms = allTracks.map(t => t.bpm);
-    const minBpm = Math.floor(Math.min(...bpms) / 2) * 2;
-    const maxBpm = Math.ceil(Math.max(...bpms) / 2) * 2;
-    const bucketSize = 2;
-    const bucketCount = Math.ceil((maxBpm - minBpm) / bucketSize);
-
-    document.getElementById('dist-min').textContent = minBpm;
-    document.getElementById('dist-max').textContent = maxBpm;
-
-    const buckets = new Array(bucketCount).fill(0);
-    bpms.forEach(b => {
-        const idx = Math.min(Math.floor((b - minBpm) / bucketSize), bucketCount - 1);
-        buckets[idx]++;
-    });
-
-    const maxCount = Math.max(...buckets, 1);
-    let html = '';
-    for (let i = 0; i < bucketCount; i++) {
-        const h = Math.max(1, (buckets[i] / maxCount) * 40);
-        const bpmLo = minBpm + i * bucketSize;
-        const bpmHi = bpmLo + bucketSize;
-        html += `<div class="bpm-dist-bar out-range" data-bpm-lo="${bpmLo}" data-bpm-hi="${bpmHi}" style="height:${h}px" title="${bpmLo}-${bpmHi}: ${buckets[i]} tracks"></div>`;
-    }
-    container.innerHTML = html;
+    const c = document.getElementById('bpm-dist'); if(!allTracks.length){c.innerHTML='';return;}
+    const bpms = allTracks.map(t=>t.bpm);
+    const min = Math.floor(Math.min(...bpms)/2)*2, max = Math.ceil(Math.max(...bpms)/2)*2, bs = 2, bc = Math.ceil((max-min)/bs);
+    document.getElementById('dist-min').textContent=min; document.getElementById('dist-max').textContent=max;
+    const bks = new Array(bc).fill(0); bpms.forEach(b=>bks[Math.min(Math.floor((b-min)/bs),bc-1)]++);
+    const mx = Math.max(...bks,1);
+    c.innerHTML = Array.from({length:bc},(_,i)=>{const lo=min+i*bs;return`<div class="bpm-dist-bar out-range" data-bpm-lo="${lo}" data-bpm-hi="${lo+bs}" style="height:${Math.max(1,bks[i]/mx*40)}px" title="${lo}-${lo+bs}: ${bks[i]}"></div>`;}).join('');
 }
 
-function updateBpmDistHighlight(bpmMin, bpmMax) {
-    document.querySelectorAll('.bpm-dist-bar').forEach(bar => {
-        const lo = parseFloat(bar.dataset.bpmLo);
-        const hi = parseFloat(bar.dataset.bpmHi);
-        const mid = (lo + hi) / 2;
-        if (mid >= bpmMin && mid <= bpmMax) {
-            bar.classList.add('in-range');
-            bar.classList.remove('out-range');
-        } else {
-            bar.classList.remove('in-range');
-            bar.classList.add('out-range');
-        }
+function updateBpmDistHighlight(lo, hi) {
+    document.querySelectorAll('.bpm-dist-bar').forEach(b => {
+        const mid = (parseFloat(b.dataset.bpmLo)+parseFloat(b.dataset.bpmHi))/2;
+        b.classList.toggle('in-range', mid>=lo && mid<=hi);
+        b.classList.toggle('out-range', mid<lo || mid>hi);
     });
 }
 
-/* ============================================================
-   FILTER POPULATION
-   ============================================================ */
 function populateSourceFilter() {
-    const sel = document.getElementById('filter-source');
-    const sources = [...new Set(allTracks.map(t => t.source))].sort();
-    sel.innerHTML = '<option value="">All Playlists</option>';
-    sources.forEach(s => {
-        sel.innerHTML += `<option value="${escHtml(s)}">${escHtml(s)}</option>`;
-    });
+    const s = document.getElementById('filter-source');
+    s.innerHTML = '<option value="">All Playlists</option>' + [...new Set(allTracks.map(t=>t.source))].sort().map(n=>`<option value="${escHtml(n)}">${escHtml(n)}</option>`).join('');
 }
-
 function populateKeyFilter() {
-    const sel = document.getElementById('filter-key');
-    const keys = [...new Set(allTracks.filter(t => t.camelot).map(t => t.camelot))].sort((a, b) => {
-        const na = parseInt(a), nb = parseInt(b);
-        if (na !== nb) return na - nb;
-        return a.slice(-1).localeCompare(b.slice(-1));
-    });
-    sel.innerHTML = '<option value="">All Keys</option>';
-    keys.forEach(k => {
-        sel.innerHTML += `<option value="${k}">${k}</option>`;
-    });
+    const s = document.getElementById('filter-key');
+    const keys = [...new Set(allTracks.filter(t=>t.camelot).map(t=>t.camelot))].sort((a,b)=>{const na=parseInt(a),nb=parseInt(b);return na!==nb?na-nb:a.slice(-1).localeCompare(b.slice(-1));});
+    s.innerHTML = '<option value="">All Keys</option>' + keys.map(k=>`<option value="${k}">${k}</option>`).join('');
 }
 
-/* ============================================================
-   EXPORT FUNCTIONS
-   ============================================================ */
+/* --- Exports --- */
 function exportCSV() {
-    if (filteredTracks.length === 0) return;
-    const header = 'Track,Artists,BPM,Key (Camelot),Energy,Danceability,Source,Album,Duration,Spotify URL';
-    const rows = filteredTracks.map(t =>
-        `"${csvEscape(t.name)}","${csvEscape(t.artists.join('; '))}",${t.bpm},"${t.camelot || ''}",${t.energy != null ? t.energy + '%' : ''},${t.danceability != null ? t.danceability + '%' : ''},"${csvEscape(t.source)}","${csvEscape(t.album)}","${formatDuration(t.duration_ms)}","${t.url}"`
-    );
-    downloadFile(header + '\n' + rows.join('\n'), 'bpm-radar-export.csv', 'text/csv');
-    showToast(`Exported ${filteredTracks.length} tracks to CSV`, 'success');
+    if(!filteredTracks.length) return;
+    const h = 'Track,Artists,BPM,Key (Camelot),Energy,Danceability,Source,Album,Duration,Spotify URL';
+    const r = filteredTracks.map(t=>`"${csvEsc(t.name)}","${csvEsc(t.artists.join('; '))}",${t.bpm},"${t.camelot||''}",${t.energy!=null?t.energy+'%':''},${t.danceability!=null?t.danceability+'%':''},"${csvEsc(t.source)}","${csvEsc(t.album)}","${fmtDur(t.duration_ms)}","${t.url}"`);
+    dlFile(h+'\n'+r.join('\n'), 'bpm-radar-export.csv', 'text/csv'); showToast(`Exported ${filteredTracks.length} tracks`, 'success');
 }
-
 function exportJSON() {
-    if (filteredTracks.length === 0) return;
-    const data = filteredTracks.map(t => ({
-        name: t.name,
-        artists: t.artists,
-        bpm: t.bpm,
-        key_camelot: t.camelot,
-        energy: t.energy,
-        danceability: t.danceability,
-        source: t.source,
-        album: t.album,
-        duration: formatDuration(t.duration_ms),
-        duration_ms: t.duration_ms,
-        spotify_url: t.url
-    }));
-    downloadFile(JSON.stringify(data, null, 2), 'bpm-radar-export.json', 'application/json');
-    showToast(`Exported ${filteredTracks.length} tracks to JSON`, 'success');
+    if(!filteredTracks.length) return;
+    const d = filteredTracks.map(t=>({name:t.name,artists:t.artists,bpm:t.bpm,key_camelot:t.camelot,energy:t.energy,source:t.source,album:t.album,duration:fmtDur(t.duration_ms),spotify_url:t.url}));
+    dlFile(JSON.stringify(d,null,2), 'bpm-radar-export.json', 'application/json'); showToast(`Exported ${filteredTracks.length} tracks`, 'success');
 }
-
 async function createSpotifyPlaylist() {
-    if (!canCreatePlaylist) {
-        showToast('Playlist creation was not authorized. Reconnect and check the checkbox.', 'error');
-        return;
-    }
-    if (filteredTracks.length === 0) return;
-
-    const btn = document.getElementById('btn-create-playlist');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Creating...';
-
+    if(!canCreatePlaylist) return showToast('Not authorized. Reconnect and check "Allow creating playlist".', 'error');
+    if(!filteredTracks.length) return;
+    const btn = document.getElementById('btn-create-playlist'); btn.disabled=true; btn.innerHTML='<span class="spinner"></span> Creating...';
     try {
-        const bpmMin = document.getElementById('filter-bpm-min').value;
-        const bpmMax = document.getElementById('filter-bpm-max').value;
-        const name = `BPM Radar: ${bpmMin}-${bpmMax} BPM`;
-
-        const res = await fetch(API_BASE + `/users/${userId}/playlists`, {
-            method: 'POST',
-            headers: {
-                'Authorization': 'Bearer ' + accessToken,
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                name: name,
-                description: `Generated by BPM Radar — ${filteredTracks.length} tracks between ${bpmMin}-${bpmMax} BPM`,
-                public: false
-            })
-        });
-        if (!res.ok) throw new Error(`Failed to create playlist: ${res.status}`);
-        const playlist = await res.json();
-
-        const uris = filteredTracks.map(t => 'spotify:track:' + t.id);
-        for (let i = 0; i < uris.length; i += 100) {
-            const batch = uris.slice(i, i + 100);
-            await fetch(API_BASE + `/playlists/${playlist.id}/tracks`, {
-                method: 'POST',
-                headers: {
-                    'Authorization': 'Bearer ' + accessToken,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({ uris: batch })
-            });
-            if (i + 100 < uris.length) await sleep(300);
-        }
-
-        showToast(`Playlist "${name}" created with ${filteredTracks.length} tracks`, 'success');
-    } catch (err) {
-        console.error(err);
-        showToast(err.message, 'error');
-    } finally {
-        btn.disabled = false;
-        btn.innerHTML = '<i class="fa-brands fa-spotify" style="color:#1DB954"></i> Create Playlist';
-    }
+        const lo=document.getElementById('filter-bpm-min').value, hi=document.getElementById('filter-bpm-max').value, name=`BPM Radar: ${lo}-${hi}`;
+        const res = await fetch(API_BASE+`/users/${userId}/playlists`,{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({name,description:`BPM Radar • ${filteredTracks.length} tracks`,public:false})});
+        if(!res.ok) throw new Error(`Failed: ${res.status}`);
+        const pl = await res.json(); const uris = filteredTracks.map(t=>'spotify:track:'+t.id);
+        for(let i=0;i<uris.length;i+=100){await fetch(API_BASE+`/playlists/${pl.id}/tracks`,{method:'POST',headers:{'Authorization':'Bearer '+accessToken,'Content-Type':'application/json'},body:JSON.stringify({uris:uris.slice(i,i+100)})});if(i+100<uris.length)await sleep(300);}
+        showToast(`Playlist "${name}" created!`, 'success');
+    } catch(e) { showToast(e.message, 'error'); }
+    finally { btn.disabled=false; btn.innerHTML='<i class="fa-brands fa-spotify" style="color:#1DB954"></i> Create Playlist'; }
 }
 
-/* ============================================================
-   AUTH FLOW
-   ============================================================ */
-function initiateAuth() {
-    const clientId = document.getElementById('inp-client-id').value.trim();
-    const redirectUri = document.getElementById('inp-redirect').value.trim();
+/* --- Helpers --- */
+function showPanel(n) { document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active')); document.getElementById('panel-'+n).classList.add('active'); }
+function updateScanStatus(t) { document.getElementById('scan-status').textContent = t; }
+function setScanProgress(p) { document.getElementById('scan-progress').style.width = p+'%'; }
+function setEqPlaying(p) { document.getElementById('eq-anim').classList.toggle('eq-paused', !p); }
+let tt; function showToast(m,t='info'){const e=document.getElementById('toast');e.textContent=m;e.className='toast '+t;clearTimeout(tt);requestAnimationFrame(()=>{e.classList.add('show');tt=setTimeout(()=>e.classList.remove('show'),4000);});}
+function fmtDur(ms){if(!ms)return'0:00';const s=Math.floor(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0');}
+function escHtml(s){const d=document.createElement('div');d.textContent=s;return d.innerHTML;}
+function csvEsc(s){return String(s).replace(/"/g,'""');}
+function dlFile(c,f,m){const u=URL.createObjectURL(new Blob([c],{type:m+';charset=utf-8'})),a=document.createElement('a');a.href=u;a.download=f;a.click();setTimeout(()=>URL.revokeObjectURL(u),5000);}
+function debounce(fn,ms){let t;return function(...a){clearTimeout(t);t=setTimeout(()=>fn.apply(this,a),ms);};}
 
-    if (!clientId) {
-        showToast('Please enter your Spotify Client ID', 'error');
-        return;
-    }
-    if (!window.crypto || !window.crypto.subtle) {
-        document.getElementById('crypto-warning').style.display = 'block';
-        return;
-    }
-
-    localStorage.setItem('bpm_radar_client_id', clientId);
-    
-    // Save skip liked preference
-    localStorage.setItem('bpm_radar_skip_liked', document.getElementById('chk-skip-liked').checked);
-
-    const verifier = randomString(64);
-    sessionStorage.setItem('bpm_radar_verifier', verifier);
-
-    sha256(verifier).then(hash => {
-        const challenge = base64url(hash);
-        const scopes = 'playlist-read-private user-library-read' + (document.getElementById('chk-create-playlist').checked ? ' playlist-modify-public playlist-modify-private' : '');
-
-        canCreatePlaylist = document.getElementById('chk-create-playlist').checked;
-        sessionStorage.setItem('bpm_radar_can_create', canCreatePlaylist ? '1' : '0');
-        sessionStorage.setItem('bpm_radar_skip_liked', document.getElementById('chk-skip-liked').checked);
-
-        const params = new URLSearchParams({
-            response_type: 'code',
-            client_id: clientId,
-            scope: scopes,
-            code_challenge_method: 'S256',
-            code_challenge: challenge,
-            redirect_uri: redirectUri
-        });
-
-        window.location.href = AUTH_URL + '?' + params.toString();
-    });
-}
-
-async function handleAuthCallback() {
-    const params = new URLSearchParams(window.location.search);
-    const code = params.get('code');
-    const error = params.get('error');
-
-    if (error) {
-        showToast(`Auth error: ${error}`, 'error');
-        showPanel('setup');
-        return;
-    }
-    if (!code) return false;
-
-    const verifier = sessionStorage.getItem('bpm_radar_verifier');
-    const clientId = localStorage.getItem('bpm_radar_client_id');
-    const redirectUri = document.getElementById('inp-redirect').value.trim();
-    canCreatePlaylist = sessionStorage.getItem('bpm_radar_can_create') === '1';
-
-    if (!verifier || !clientId) {
-        showToast('Missing auth state. Please try again.', 'error');
-        showPanel('setup');
-        return true;
-    }
-
-    showPanel('scanning');
-    updateScanStatus('Exchanging authorization code...');
-    setScanProgress(0);
-
-    try {
-        const res = await fetch(TOKEN_URL, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
-            body: new URLSearchParams({
-                client_id: clientId,
-                grant_type: 'authorization_code',
-                code: code,
-                redirect_uri: redirectUri,
-                code_verifier: verifier
-            })
-        });
-
-        if (!res.ok) {
-            const errData = await res.json().catch(() => ({}));
-            throw new Error(errData.error_description || `Token exchange failed (${res.status})`);
-        }
-
-        const data = await res.json();
-        accessToken = data.access_token;
-
-        window.history.replaceState({}, document.title, window.location.pathname);
-
-        await startScan();
-    } catch (err) {
-        console.error(err);
-        showToast(err.message, 'error');
-        showPanel('setup');
-    }
-
-    return true;
-}
-
-/* ============================================================
-   UI HELPERS
-   ============================================================ */
-function showPanel(name) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    document.getElementById('panel-' + name).classList.add('active');
-}
-
-function updateScanStatus(text) {
-    document.getElementById('scan-status').textContent = text;
-}
-
-function setScanProgress(pct) {
-    document.getElementById('scan-progress').style.width = pct + '%';
-}
-
-function setEqPlaying(playing) {
-    document.getElementById('eq-anim').classList.toggle('eq-paused', !playing);
-}
-
-let toastTimer = null;
-function showToast(msg, type = 'info') {
-    const el = document.getElementById('toast');
-    el.textContent = msg;
-    el.className = 'toast ' + type;
-    clearTimeout(toastTimer);
-    requestAnimationFrame(() => {
-        el.classList.add('show');
-        toastTimer = setTimeout(() => el.classList.remove('show'), 4000);
-    });
-}
-
-function formatDuration(ms) {
-    if (!ms) return '0:00';
-    const s = Math.floor(ms / 1000);
-    return Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
-}
-
-function escHtml(str) {
-    const d = document.createElement('div');
-    d.textContent = str;
-    return d.innerHTML;
-}
-
-function csvEscape(str) {
-    return String(str).replace(/"/g, '""');
-}
-
-function downloadFile(content, filename, mime) {
-    const blob = new Blob([content], { type: mime + ';charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 5000);
-}
-
-/* ============================================================
-   EVENT LISTENERS
-   ============================================================ */
+/* --- Init --- */
 document.addEventListener('DOMContentLoaded', () => {
-    const savedId = localStorage.getItem('bpm_radar_client_id');
-    if (savedId) document.getElementById('inp-client-id').value = savedId;
-
-    // Restore skip liked setting
-    const savedSkip = localStorage.getItem('bpm_radar_skip_liked');
-    if (savedSkip === 'true') document.getElementById('chk-skip-liked').checked = true;
-
-    const redirectUri = window.location.origin + window.location.pathname;
-    document.getElementById('inp-redirect').value = redirectUri;
-
-    if (!window.crypto || !window.crypto.subtle) {
-        document.getElementById('crypto-warning').style.display = 'block';
-        document.getElementById('btn-connect').disabled = true;
-    }
+    const sid = localStorage.getItem('bpm_radar_client_id');
+    if(sid) document.getElementById('inp-client-id').value = sid;
+    document.getElementById('inp-redirect').value = window.location.origin + window.location.pathname;
+    if(!window.crypto?.subtle){document.getElementById('crypto-warning').style.display='block';document.getElementById('btn-connect').disabled=true;}
 
     document.getElementById('btn-connect').addEventListener('click', initiateAuth);
-
-    document.getElementById('btn-cancel').addEventListener('click', () => {
-        cancelScan = true;
-        showToast('Scan cancelled', 'info');
+    
+    // Playlist Selector Bindings
+    document.getElementById('btn-select-all').addEventListener('click', () => {
+        document.querySelectorAll('.pl-item').forEach(item => {
+            const cb = item.querySelector('.pl-check'); cb.checked = true; item.classList.add('selected');
+            const icon = item.querySelector('.pl-icon'); icon.className = 'fa-solid fa-square-check pl-icon'; icon.style.color = 'var(--accent)';
+        }); updateSelectionCount();
     });
+    document.getElementById('btn-deselect-all').addEventListener('click', () => {
+        document.querySelectorAll('.pl-item').forEach(item => {
+            const cb = item.querySelector('.pl-check'); cb.checked = false; item.classList.remove('selected');
+            const icon = item.querySelector('.pl-icon'); icon.className = 'fa-regular fa-square pl-icon'; icon.style.color = 'var(--muted)';
+        }); updateSelectionCount();
+    });
+    document.getElementById('btn-scan-selected').addEventListener('click', startScan);
 
+    document.getElementById('btn-cancel').addEventListener('click', () => { cancelScan=true; showToast('Scan cancelled', 'info'); });
+
+    // Results Bindings
     document.getElementById('filter-bpm-min').addEventListener('input', debounce(applyFilters, 300));
     document.getElementById('filter-bpm-max').addEventListener('input', debounce(applyFilters, 300));
     document.getElementById('filter-key').addEventListener('change', applyFilters);
     document.getElementById('filter-search').addEventListener('input', debounce(applyFilters, 200));
     document.getElementById('filter-source').addEventListener('change', applyFilters);
-
-    document.querySelectorAll('.results-table th[data-sort]').forEach(th => {
-        th.addEventListener('click', () => {
-            const col = th.dataset.sort;
-            if (sortCol === col) {
-                sortDir = sortDir === 'asc' ? 'desc' : 'asc';
-            } else {
-                sortCol = col;
-                sortDir = 'asc';
-            }
-            doSort();
-            renderTable();
-        });
-    });
+    
+    document.querySelectorAll('.results-table th[data-sort]').forEach(th => th.addEventListener('click', () => {
+        const c = th.dataset.sort; if(sortCol===c) sortDir=sortDir==='asc'?'desc':'asc'; else {sortCol=c;sortDir='asc';} doSort(); renderTable();
+    }));
 
     document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
     document.getElementById('btn-export-json').addEventListener('click', exportJSON);
     document.getElementById('btn-create-playlist').addEventListener('click', createSpotifyPlaylist);
-    document.getElementById('btn-rescan').addEventListener('click', () => {
-        allTracks = [];
-        filteredTracks = [];
-        startScan();
-    });
+    
+    // Go back to selection instead of full rescan
+    document.getElementById('btn-back-to-select').addEventListener('click', () => showPanel('select'));
 
     handleAuthCallback();
 });
-
-function debounce(fn, ms) {
-    let timer;
-    return function(...args) {
-        clearTimeout(timer);
-        timer = setTimeout(() => fn.apply(this, args), ms);
-    };
-}
 </script>
 </body>
 </html>
