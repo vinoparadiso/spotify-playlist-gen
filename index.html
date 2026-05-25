@@ -332,7 +332,7 @@ const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const API_BASE = 'https://api.spotify.com/v1';
 const BATCH_SIZE = 50; // audio features batch size
-const DELAY_MS = 180;  // delay between API calls to avoid rate limits
+const DELAY_MS = 400;  // delay between API calls to avoid rate limits
 
 let accessToken = null;
 let userId = null;
@@ -384,16 +384,23 @@ function base64url(buf) {
 /* ============================================================
    SPOTIFY API WRAPPERS
    ============================================================ */
-async function apiFetch(url) {
+async function apiFetch(url, retries = 3) {
     const res = await fetch(url, {
         headers: { 'Authorization': 'Bearer ' + accessToken }
     });
+    
     if (res.status === 401) throw new Error('Token expired. Please reconnect.');
-    if (res.status === 429) {
-        const retryAfter = res.headers.get('Retry-After') || '2';
-        await new Promise(r => setTimeout(r, parseInt(retryAfter) * 1000));
-        return apiFetch(url);
+    
+    // Handle both 429 (Standard Rate Limit) and 403 (Spotify's aggressive hidden rate limit)
+    if (res.status === 429 || res.status === 403) {
+        if (retries <= 0) throw new Error(`Spotify rate limit hit (Status ${res.status}). Try again in a few minutes, or reduce your library size.`);
+        const retryAfter = res.headers.get('Retry-After') || '5';
+        const waitTime = parseInt(retryAfter) * 1000;
+        console.warn(`Rate limited (${res.status}). Retrying in ${waitTime}ms... (${retries} retries left)`);
+        await new Promise(r => setTimeout(r, waitTime));
+        return apiFetch(url, retries - 1);
     }
+    
     if (!res.ok) throw new Error(`API error ${res.status}: ${res.statusText}`);
     return res.json();
 }
