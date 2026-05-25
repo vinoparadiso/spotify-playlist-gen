@@ -479,7 +479,7 @@ function renderPlaylistSelector() {
     let html = '';
     
     userPlaylists.forEach((p, i) => {
-        const imgSrc = p.isLiked ? 'https://misc.scdn.co/liked-songs/liked-songs-640.png' : (p.images[0]?.url || '');
+        const imgSrc = p.isLiked ? 'https://misc.scdn.co/liked-songs/liked-songs-640.png' : (p.images?.[0]?.url || '');
         const count = p.tracks?.total || 0;
         html += `
         <label class="pl-item" data-id="${p.id}">
