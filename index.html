@@ -322,7 +322,7 @@ const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const API_BASE = 'https://api.spotify.com/v1';
 const BATCH_SIZE = 50; // Kept at 50. 100 triggers 403s faster on audio features.
-const DELAY_MS = 1000; // 1 second between heavy audio feature requests
+const DELAY_MS = 1500; // 1.5 seconds to be extra safe
 
 let accessToken = null;
 let userId = null;
@@ -352,18 +352,19 @@ async function apiFetch(url, retries = 5) {
     
     if (res.status === 401) throw new Error('Token expired. Please reconnect.');
     
-    // 403 on audio features = hard rate limit block. Needs long backoff.
-    if (res.status === 429 || res.status === 403) {
-        if (retries <= 0) throw new Error(`Spotify blocked the request (Status ${res.status}). The selected playlists might be too large to scan all at once. Try scanning fewer playlists.`);
-        
-        // If 403, wait 10 seconds. If 429, use their header or default to 3s.
-        const waitTime = res.status === 403 ? 10000 : (parseInt(res.headers.get('Retry-After') || '3') * 1000);
-        
-        console.warn(`Rate limited (${res.status}). Pausing for ${waitTime/1000}s... (${retries} tries left)`);
-        document.getElementById('scan-status').textContent = `Rate limited by Spotify. Waiting ${waitTime/1000}s...`;
-        
+    if (res.status === 429) {
+        // Standard rate limit - safe to retry after waiting
+        if (retries <= 0) throw new Error('Spotify is busy. Wait a minute and try again.');
+        const waitTime = (parseInt(res.headers.get('Retry-After') || '3') * 1000);
+        console.warn(`Rate limited (429). Waiting ${waitTime/1000}s...`);
+        document.getElementById('scan-status').textContent = `Rate limited. Waiting ${waitTime/1000}s...`;
         await new Promise(r => setTimeout(r, waitTime));
         return apiFetch(url, retries - 1);
+    }
+    
+    if (res.status === 403) {
+        // Hard block. DO NOT RETRY. Retrying makes Spotify lock the token for longer.
+        throw new Error('Spotify temporarily blocked Audio Features for your account (403). This is a known API issue. Please wait 10-15 minutes before trying again.');
     }
     
     if (!res.ok) throw new Error(`API error ${res.status}: ${res.statusText}`);
