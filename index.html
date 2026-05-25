@@ -1,4 +1,4 @@
- <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
@@ -159,9 +159,15 @@
                         This must match exactly in your Spotify Developer App settings.
                     </p>
 
-                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:22px">
-                        <input type="checkbox" id="chk-create-playlist" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
-                        <label for="chk-create-playlist" style="font-size:13px;cursor:pointer">Also allow creating a new Spotify playlist from results</label>
+                    <div style="display:flex;flex-direction:column;gap:12px;margin-bottom:22px">
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <input type="checkbox" id="chk-create-playlist" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
+                            <label for="chk-create-playlist" style="font-size:13px;cursor:pointer">Allow creating a new Spotify playlist from results</label>
+                        </div>
+                        <div style="display:flex;align-items:center;gap:8px">
+                            <input type="checkbox" id="chk-skip-liked" style="accent-color:var(--accent);width:16px;height:16px;cursor:pointer">
+                            <label for="chk-skip-liked" style="font-size:13px;cursor:pointer">Exclude Liked Songs (speeds up scanning significantly)</label>
+                        </div>
                     </div>
 
                     <button class="btn-primary" id="btn-connect" style="width:100%;justify-content:center">
@@ -331,32 +337,31 @@
 const AUTH_URL = 'https://accounts.spotify.com/authorize';
 const TOKEN_URL = 'https://accounts.spotify.com/api/token';
 const API_BASE = 'https://api.spotify.com/v1';
-const BATCH_SIZE = 100; // audio features batch size
-const DELAY_MS = 800;  // delay between API calls to avoid rate limits
+const BATCH_SIZE = 100; // Spotify allows up to 100 IDs per request
+const DELAY_MS = 800;  // Increased delay to guarantee it finishes and avoid 403s
 
 let accessToken = null;
 let userId = null;
-let allTracks = [];      // full track list with features
-let filteredTracks = [];  // after applying filters
+let allTracks = [];      
+let filteredTracks = []; 
 let sortCol = 'bpm';
 let sortDir = 'asc';
 let cancelScan = false;
 let canCreatePlaylist = false;
 
-/* Camelot wheel mapping: Spotify key index → { major: "XB", minor: "XA" } */
 const CAMELOT_MAP = {
-    0:  { major:'8B',  minor:'5A'  }, // C
-    1:  { major:'3B',  minor:'12A' }, // C#/Db
-    2:  { major:'10B', minor:'7A'  }, // D
-    3:  { major:'5B',  minor:'2A'  }, // D#/Eb
-    4:  { major:'12B', minor:'9A'  }, // E
-    5:  { major:'7B',  minor:'4A'  }, // F
-    6:  { major:'2B',  minor:'11A' }, // F#/Gb
-    7:  { major:'9B',  minor:'6A'  }, // G
-    8:  { major:'4B',  minor:'1A'  }, // G#/Ab
-    9:  { major:'11B', minor:'8A'  }, // A
-    10: { major:'6B',  minor:'3A'  }, // A#/Bb
-    11: { major:'1B',  minor:'10A' }  // B
+    0:  { major:'8B',  minor:'5A'  }, 
+    1:  { major:'3B',  minor:'12A' }, 
+    2:  { major:'10B', minor:'7A'  }, 
+    3:  { major:'5B',  minor:'2A'  }, 
+    4:  { major:'12B', minor:'9A'  }, 
+    5:  { major:'7B',  minor:'4A'  }, 
+    6:  { major:'2B',  minor:'11A' }, 
+    7:  { major:'9B',  minor:'6A'  }, 
+    8:  { major:'4B',  minor:'1A'  }, 
+    9:  { major:'11B', minor:'8A'  }, 
+    10: { major:'6B',  minor:'3A'  }, 
+    11: { major:'1B',  minor:'10A' }  
 };
 
 /* ============================================================
@@ -370,8 +375,7 @@ function randomString(len) {
 
 async function sha256(plain) {
     const encoded = new TextEncoder().encode(plain);
-    const buf = await crypto.subtle.digest('SHA-256', encoded);
-    return buf;
+    return await crypto.subtle.digest('SHA-256', encoded);
 }
 
 function base64url(buf) {
@@ -393,7 +397,7 @@ async function apiFetch(url, retries = 3) {
     
     // Handle both 429 (Standard Rate Limit) and 403 (Spotify's aggressive hidden rate limit)
     if (res.status === 429 || res.status === 403) {
-        if (retries <= 0) throw new Error(`Spotify rate limit hit (Status ${res.status}). Try again in a few minutes, or reduce your library size.`);
+        if (retries <= 0) throw new Error(`Spotify rate limit hit (Status ${res.status}). Try again in a few minutes.`);
         const retryAfter = res.headers.get('Retry-After') || '5';
         const waitTime = parseInt(retryAfter) * 1000;
         console.warn(`Rate limited (${res.status}). Retrying in ${waitTime}ms... (${retries} retries left)`);
@@ -405,7 +409,6 @@ async function apiFetch(url, retries = 3) {
     return res.json();
 }
 
-/* Paginated fetch — collects all pages */
 async function fetchAllPages(url) {
     let results = [];
     let next = url;
@@ -431,22 +434,22 @@ async function startScan() {
     setEqPlaying(true);
 
     try {
-        // Get user profile
         updateScanStatus('Fetching your profile...');
         const me = await apiFetch(API_BASE + '/me');
         userId = me.id;
         document.getElementById('user-name').textContent = me.display_name || me.id;
         document.getElementById('user-badge').style.display = 'flex';
 
-        // Collect tracks from all playlists
         updateScanStatus('Fetching playlists...');
         const playlistsData = await fetchAllPages(API_BASE + '/me/playlists?limit=50');
         const playlists = playlistsData.filter(p => p.owner.id === me.id || p.collaborative);
 
-        // Add "Liked Songs" as a virtual playlist
-        const allSources = [{ id: 'liked', name: 'Liked Songs' }, ...playlists.map(p => ({ id: p.id, name: p.name }))];
+        // Check if user wants to skip liked songs
+        const skipLiked = sessionStorage.getItem('bpm_radar_skip_liked') === 'true';
+        const likedSource = skipLiked ? [] : [{ id: 'liked', name: 'Liked Songs' }];
+        const allSources = [...likedSource, ...playlists.map(p => ({ id: p.id, name: p.name }))];
 
-        const trackMap = new Map(); // dedup by track ID
+        const trackMap = new Map();
 
         for (let i = 0; i < allSources.length; i++) {
             if (cancelScan) break;
@@ -465,7 +468,6 @@ async function startScan() {
             for (const item of items) {
                 const track = src.id === 'liked' ? item.track : item.track;
                 if (!track || !track.id || track.id === 'null') continue;
-                // Skip local files (no external_urls.spotify)
                 if (!track.external_urls || !track.external_urls.spotify) continue;
                 if (!trackMap.has(track.id)) {
                     trackMap.set(track.id, {
@@ -490,7 +492,6 @@ async function startScan() {
 
         if (cancelScan) { showPanel('setup'); return; }
 
-        // Fetch audio features in batches
         const ids = Array.from(trackMap.keys());
         const totalBatches = Math.ceil(ids.length / BATCH_SIZE);
         updateScanStatus('Analyzing audio features (BPM, key, energy)...');
@@ -524,10 +525,7 @@ async function startScan() {
         }
 
         setScanProgress(100);
-        allTracks = Array.from(trackMap.values());
-
-        // Remove tracks with no BPM data
-        allTracks = allTracks.filter(t => t.bpm !== null);
+        allTracks = Array.from(trackMap.values()).filter(t => t.bpm !== null);
 
         if (allTracks.length === 0) {
             showToast('No tracks with BPM data found.', 'error');
@@ -617,7 +615,6 @@ function renderTable() {
     exportBtns.forEach(b => b.disabled = false);
     document.getElementById('showing-count').textContent = `${filteredTracks.length} track${filteredTracks.length !== 1 ? 's' : ''} shown`;
 
-    // Update sort header indicators
     document.querySelectorAll('.results-table th[data-sort]').forEach(th => {
         th.classList.remove('sort-asc', 'sort-desc');
         if (th.dataset.sort === sortCol) th.classList.add(sortDir === 'asc' ? 'sort-asc' : 'sort-desc');
@@ -627,7 +624,6 @@ function renderTable() {
     filteredTracks.forEach((t, i) => {
         const camelotClass = t.mode === 1 ? 'major' : 'minor';
         const artistsStr = t.artists.join(', ');
-        const dur = formatDuration(t.duration_ms);
         html += `<tr>
             <td style="color:var(--muted);font-size:12px;font-variant-numeric:tabular-nums">${i + 1}</td>
             <td>
@@ -658,11 +654,10 @@ function updateStats(bpmMin, bpmMax) {
 function energyColor(e) {
     if (e == null) return 'var(--muted)';
     if (e >= 75) return '#ef4444';
-    if (e >= 50) return var_accent();
+    if (e >= 50) return '#d4a017';
     if (e >= 25) return '#a3e635';
     return '#4ade80';
 }
-function var_accent() { return '#d4a017'; }
 
 /* ============================================================
    BPM DISTRIBUTION CHART
@@ -785,7 +780,6 @@ async function createSpotifyPlaylist() {
         const bpmMax = document.getElementById('filter-bpm-max').value;
         const name = `BPM Radar: ${bpmMin}-${bpmMax} BPM`;
 
-        // Create playlist
         const res = await fetch(API_BASE + `/users/${userId}/playlists`, {
             method: 'POST',
             headers: {
@@ -801,7 +795,6 @@ async function createSpotifyPlaylist() {
         if (!res.ok) throw new Error(`Failed to create playlist: ${res.status}`);
         const playlist = await res.json();
 
-        // Add tracks in batches of 100
         const uris = filteredTracks.map(t => 'spotify:track:' + t.id);
         for (let i = 0; i < uris.length; i += 100) {
             const batch = uris.slice(i, i + 100);
@@ -842,20 +835,21 @@ function initiateAuth() {
         return;
     }
 
-    // Save client ID
     localStorage.setItem('bpm_radar_client_id', clientId);
+    
+    // Save skip liked preference
+    localStorage.setItem('bpm_radar_skip_liked', document.getElementById('chk-skip-liked').checked);
 
-    // Generate PKCE
     const verifier = randomString(64);
     sessionStorage.setItem('bpm_radar_verifier', verifier);
 
-    // Build challenge
     sha256(verifier).then(hash => {
         const challenge = base64url(hash);
         const scopes = 'playlist-read-private user-library-read' + (document.getElementById('chk-create-playlist').checked ? ' playlist-modify-public playlist-modify-private' : '');
 
         canCreatePlaylist = document.getElementById('chk-create-playlist').checked;
         sessionStorage.setItem('bpm_radar_can_create', canCreatePlaylist ? '1' : '0');
+        sessionStorage.setItem('bpm_radar_skip_liked', document.getElementById('chk-skip-liked').checked);
 
         const params = new URLSearchParams({
             response_type: 'code',
@@ -893,7 +887,6 @@ async function handleAuthCallback() {
         return true;
     }
 
-    // Show scanning panel with "Exchanging token..." status
     showPanel('scanning');
     updateScanStatus('Exchanging authorization code...');
     setScanProgress(0);
@@ -919,10 +912,8 @@ async function handleAuthCallback() {
         const data = await res.json();
         accessToken = data.access_token;
 
-        // Clean URL
         window.history.replaceState({}, document.title, window.location.pathname);
 
-        // Start scan
         await startScan();
     } catch (err) {
         console.error(err);
@@ -995,37 +986,34 @@ function downloadFile(content, filename, mime) {
    EVENT LISTENERS
    ============================================================ */
 document.addEventListener('DOMContentLoaded', () => {
-    // Restore client ID
     const savedId = localStorage.getItem('bpm_radar_client_id');
     if (savedId) document.getElementById('inp-client-id').value = savedId;
 
-    // Set redirect URI
+    // Restore skip liked setting
+    const savedSkip = localStorage.getItem('bpm_radar_skip_liked');
+    if (savedSkip === 'true') document.getElementById('chk-skip-liked').checked = true;
+
     const redirectUri = window.location.origin + window.location.pathname;
     document.getElementById('inp-redirect').value = redirectUri;
 
-    // Check for crypto.subtle
     if (!window.crypto || !window.crypto.subtle) {
         document.getElementById('crypto-warning').style.display = 'block';
         document.getElementById('btn-connect').disabled = true;
     }
 
-    // Connect button
     document.getElementById('btn-connect').addEventListener('click', initiateAuth);
 
-    // Cancel scan
     document.getElementById('btn-cancel').addEventListener('click', () => {
         cancelScan = true;
         showToast('Scan cancelled', 'info');
     });
 
-    // Filter inputs
     document.getElementById('filter-bpm-min').addEventListener('input', debounce(applyFilters, 300));
     document.getElementById('filter-bpm-max').addEventListener('input', debounce(applyFilters, 300));
     document.getElementById('filter-key').addEventListener('change', applyFilters);
     document.getElementById('filter-search').addEventListener('input', debounce(applyFilters, 200));
     document.getElementById('filter-source').addEventListener('change', applyFilters);
 
-    // Sort headers
     document.querySelectorAll('.results-table th[data-sort]').forEach(th => {
         th.addEventListener('click', () => {
             const col = th.dataset.sort;
@@ -1040,7 +1028,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // Export buttons
     document.getElementById('btn-export-csv').addEventListener('click', exportCSV);
     document.getElementById('btn-export-json').addEventListener('click', exportJSON);
     document.getElementById('btn-create-playlist').addEventListener('click', createSpotifyPlaylist);
@@ -1050,7 +1037,6 @@ document.addEventListener('DOMContentLoaded', () => {
         startScan();
     });
 
-    // Handle auth callback
     handleAuthCallback();
 });
 
