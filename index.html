@@ -363,8 +363,9 @@ async function apiFetch(url, retries = 5) {
     }
     
     if (res.status === 403) {
-        // Hard block. DO NOT RETRY. Retrying makes Spotify lock the token for longer.
-        throw new Error('Spotify temporarily blocked Audio Features for your account (403). This is a known API issue. Please wait 10-15 minutes before trying again.');
+        // Log the exact URL that failed so we can see what's causing it
+        console.error("403 FORBIDDEN ON URL:", url);
+        throw new Error(`Spotify returned 403 Forbidden. Check the F12 Console to see the exact URL that failed.`);
     }
     
     if (!res.ok) throw new Error(`API error ${res.status}: ${res.statusText}`);
